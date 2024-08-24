@@ -1,0 +1,16 @@
+{
+    "name": "DCEditor",
+    "rootNamespace": "DCEditor",
+    "references": [
+        "GUID:3c41d84b7071bc74dabf745ee3db75c9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
