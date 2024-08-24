@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "displayName": "DC Essentials",
   "description": "A collection of scripts/tools to ease Unity development.",
-  "unity": "2022.3.34f1",
+  "unity": "2022.3",
   "author": {
     "name": "Vaibhav"
   }
