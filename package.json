@@ -1,10 +1,10 @@
 {
   "name": "com.dominocode.essentials",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "displayName": "DC Essentials",
   "description": "A collection of scripts/tools to ease Unity development.",
   "unity": "2022.3",
   "author": {
-    "name": "Vaibhav"
+    "name": "Domino"
   }
 }

@@ -4,7 +4,7 @@ namespace DC
 {
 
     [ExecuteInEditMode]
-    public class AlignChild : MonoBehaviour
+    public class DistributeChild : MonoBehaviour
     {
         public float xSpacing = 0f; // Space between the objects along the X axis
         public float ySpacing = 0f; // Space between the objects along the Y axis
