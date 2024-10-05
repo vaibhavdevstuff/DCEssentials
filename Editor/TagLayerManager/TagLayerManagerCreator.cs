@@ -9,7 +9,7 @@ namespace DCEditor
     {
         private const string defaultScriptFolderLocationToCreate = "/Scripts/System/TagLayerManager/";
 
-        [MenuItem("DC/Update Tag Layer Manager")]
+        [MenuItem(DCEditorMain.MenuItemPath + "Update Tag Layer Manager")]
         public static void CreateManagerScripts()
         {
             CreateTagManagerScript();
