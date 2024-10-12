@@ -1,29 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace DCEditor
 {
-    public static class TagLayerManagerCreator
+    public class TagLayerManagerCreator
     {
-        private const string defaultScriptFolderLocationToCreate = "/Scripts/System/TagLayerManager/";
-
         [MenuItem(DCEditorMain.MenuItemPath + "Update Tag Layer Manager")]
         public static void CreateManagerScripts()
         {
-            CreateTagManagerScript();
-            CreateLayerManagerScript();
+            CreateTagLayerManagerScript();
         }
 
-        public static void CreateTagManagerScript()
+        public static void CreateTagLayerManagerScript()
         {
-            CreateScript("TagManager.cs", WriteTagManager);
-        }
-
-        public static void CreateLayerManagerScript()
-        {
-            CreateScript("LayerManager.cs", WriteLayerManager);
+            CreateScript("TagLayerManager.cs", WriteTagLayerManager);
         }
 
         private static void CreateScript(string scriptName, Action<string> writeFunction)
@@ -31,27 +24,46 @@ namespace DCEditor
             // Check if the script already exists
             string scriptPath = FindScriptPath(scriptName);
 
-            if (scriptPath != null)
+            if (!string.IsNullOrWhiteSpace(scriptPath))
             {
                 // If the script already exists, use its path
                 writeFunction(scriptPath);
             }
             else
             {
-                // If the script doesn't exist, use the default path
-                string defaultScriptPath = Application.dataPath + defaultScriptFolderLocationToCreate + scriptName;
+                // If the script doesn't exist, prompt the user to select a folder inside the "Assets" folder
+                string selectedPath = EditorUtility.OpenFolderPanel("Select Folder", Application.dataPath, "");
 
-                if (!Directory.Exists(Path.GetDirectoryName(defaultScriptPath)))
+                if (!string.IsNullOrEmpty(selectedPath))
                 {
-                    // Create the necessary directories if they don't exist
-                    Directory.CreateDirectory(Path.GetDirectoryName(defaultScriptPath));
+                    // Convert absolute path to relative Unity path
+                    if (selectedPath.StartsWith(Application.dataPath))
+                    {
+                        string relativePath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
+                        string defaultScriptPath = Path.Combine(relativePath, scriptName);
+
+                        Debug.Log($"{scriptName} is created with namespace {NamespaceManagerWindow.GetDCProjectDefaultNamespace()} at location: {defaultScriptPath}\n" +
+                                  "You can place it wherever you want.");
+
+                        // Write the script to the specified path
+                        try
+                        {
+                            writeFunction(defaultScriptPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"Failed to write script at {defaultScriptPath}. Error: {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("Selected folder must be inside the Assets folder.");
+                    }
                 }
-
-                Debug.Log($"{scriptName} is created with namespace {"Game.Utils"} on Location: {Application.dataPath + defaultScriptFolderLocationToCreate} \n " +
-                    $"You can Place it where ever you want");
-
-                // Write the script to the default path
-                writeFunction(defaultScriptPath);
+                else
+                {
+                    Debug.LogWarning("Script creation canceled. No folder selected.");
+                }
             }
         }
 
@@ -67,78 +79,94 @@ namespace DCEditor
             return null; // Script not found
         }
 
-        private static void WriteTagManager(string path)
+        private static void WriteTagLayerManager(string path)
+        {
+            string projectDefaultNamespace = NamespaceManagerWindow.GetDCProjectDefaultNamespace();
+            Debug.Log("Default Name " +  projectDefaultNamespace);
+            // Create the new script using a 'using' statement for automatic disposal
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(path))
+                {
+                    writer.WriteLine("using UnityEngine;");
+                    writer.WriteLine("");
+
+                    WriteNamespaceBlock(
+                        writer,
+                        projectDefaultNamespace,
+                        () =>
+                        {
+                            WriteTagManagerClass(writer);
+                            writer.WriteLine("");
+                            WriteLayerManagerClass(writer);
+                        });
+                }
+
+                // Refresh the asset database to make sure the new script is recognized
+                AssetDatabase.Refresh();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to write the TagLayerManager script. Error: {ex.Message}");
+            }
+        }
+
+        private static void WriteNamespaceBlock(StreamWriter writer, string namespaceName, Action writeContent)
+        {
+            if (!string.IsNullOrWhiteSpace(namespaceName))
+            {
+                writer.WriteLine($"namespace {namespaceName}");
+                writer.WriteLine("{");
+                writeContent?.Invoke();
+                writer.WriteLine("}");
+            }
+            else
+            {
+                writeContent?.Invoke();
+            }
+        }
+
+        private static void WriteTagManagerClass(StreamWriter writer)
         {
             string[] tagNames = UnityEditorInternal.InternalEditorUtility.tags;
 
-            // Create the new script
-            StreamWriter writer = new StreamWriter(path);
-            writer.WriteLine("using UnityEngine;");
-            writer.WriteLine("");
-            writer.WriteLine("namespace Game.Utils");
-            writer.WriteLine("{");
             writer.WriteLine("    public static class TagManager");
             writer.WriteLine("    {");
-            writer.WriteLine("        // Constant variable to store all the Tag names");
+            writer.WriteLine("        // Constant variables to store all Tag names");
             writer.WriteLine("");
 
             // Add each tag name to the static variable
             for (int i = 0; i < tagNames.Length; i++)
             {
-                string variableName = tagNames[i];
-                variableName = variableName.Replace(" ", ""); // Remove all spaces
-
+                string variableName = tagNames[i].Replace(" ", ""); // Remove all spaces
                 writer.WriteLine($"        public const string {variableName} = \"{tagNames[i]}\";");
             }
 
-            writer.WriteLine("");
             writer.WriteLine("    }");
-            writer.WriteLine("}");
-            writer.Close();
-
-            // Refresh the asset database to make sure the new script is recognized
-            AssetDatabase.Refresh();
         }
 
-        private static void WriteLayerManager(string path)
+        public static void WriteLayerManagerClass(StreamWriter writer)
         {
             string[] layerNames = UnityEditorInternal.InternalEditorUtility.layers;
 
-            // Create the new script
-            StreamWriter writer = new StreamWriter(path);
-            writer.WriteLine("using UnityEngine;");
-            writer.WriteLine("");
-            writer.WriteLine("namespace Game.Utils");
-            writer.WriteLine("{");
             writer.WriteLine("    public static class LayerManager");
             writer.WriteLine("    {");
-            writer.WriteLine("        // Constant variable to store all the Layers");
+            writer.WriteLine("        // Constant variables to store all Layer indices");
             writer.WriteLine("");
 
-            // Add each tag name to the static variable
+            // Add each layer name to the static variable
             for (int i = 0; i < layerNames.Length; i++)
             {
                 int layerIndex = LayerMask.NameToLayer(layerNames[i]);
-
-                string variableName = layerNames[i];
-                variableName = variableName.Replace(" ", ""); // Remove all spaces
-
+                string variableName = layerNames[i].Replace(" ", ""); // Remove all spaces
                 writer.WriteLine($"        public const int {variableName} = {layerIndex};");
             }
 
-            writer.WriteLine("");
             writer.WriteLine("    }");
-            writer.WriteLine("}");
-            writer.Close();
-
-            // Refresh the asset database to make sure the new script is recognized
-            AssetDatabase.Refresh();
         }
 
 
 
-    }//class
 
-
-
-}
+    } //class
+} //namespace
