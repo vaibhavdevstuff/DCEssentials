@@ -12,7 +12,7 @@ namespace DCEditor
         private List<string> scenePaths = new List<string>(); // Store scene paths
         private Vector2 scrollPosition; // For scrolling the scene list
 
-        private string ScenePathKey = "ScenePathKey";
+        private string ScenePathKey { get { return "SCENEPATHKEY_" + GetProjectName(); } }
 
         // Add a menu item to open this window
         [MenuItem(DCEditorMain.MenuItemPath + "Scene Loader")]
@@ -23,9 +23,9 @@ namespace DCEditor
 
         private void OnEnable()
         {
-            folderPath = EditorPrefs.GetString(ScenePathKey, "Assets");
+            folderPath = EditorPrefs.GetString(ScenePathKey, Application.dataPath);
 
-            if (folderPath != "Assets")
+            if (folderPath != Application.dataPath)
             {
                 FindScenesInFolder(folderPath);
             }
@@ -38,6 +38,7 @@ namespace DCEditor
 
             if (GUILayout.Button("Select Folder"))
             {
+
                 string selectedPath = EditorUtility.OpenFolderPanel("Select Folder", folderPath, "");
                 if (!string.IsNullOrEmpty(selectedPath))
                 {
@@ -45,7 +46,7 @@ namespace DCEditor
                     if (selectedPath.StartsWith(Application.dataPath))
                     {
                         folderPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
-
+                        Debug.Log(folderPath);
                         EditorPrefs.SetString(ScenePathKey, folderPath);
                     }
                     else
@@ -59,9 +60,9 @@ namespace DCEditor
             }
 
             // Display selected folder
-            GUILayout.Label("Selected Folder: " + folderPath, EditorStyles.label);
+            GUILayout.Label("Selected Folder: " + (folderPath == Application.dataPath ? "Assets" : folderPath), EditorStyles.label);
 
-            if (folderPath == "Assets") return;
+            //if (folderPath == "Assets") return;
 
             // Refresh button
             RefreshSceneList();
@@ -159,6 +160,15 @@ namespace DCEditor
             {
                 Debug.LogError("Could not find the scene in the Project window.");
             }
+        }
+
+        string GetProjectName()
+        {
+            // Get the full path of the "Assets" folder
+            string projectPath = Application.dataPath;
+
+            // Get the project folder name by getting the parent folder of "Assets"
+            return Path.GetFileName(Path.GetDirectoryName(projectPath));
         }
     }
 }
